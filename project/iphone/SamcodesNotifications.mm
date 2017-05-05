@@ -182,13 +182,13 @@ namespace samcodesnotifications
 		[controller cancelLocalNotification:slot];
 	}
 	
-	void cancelLocalNotifications()
+	void cancelLocalNotifications(int number)
 	{
 		NotificationsController* controller = getNotificationsController();
 		[controller cancelLocalNotifications];
 	}
-	
-	int getApplicationIconBadgeNumber()
+
+	int getApplicationIconBadgeNumber(int number)
 	{
 		NotificationsController* controller = getNotificationsController();
 		return [controller getApplicationIconBadgeNumber];

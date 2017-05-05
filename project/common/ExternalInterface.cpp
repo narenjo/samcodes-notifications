@@ -24,17 +24,17 @@ void samcodesnotifications_cancel_local_notification(int slot)
 }
 DEFINE_PRIME1v(samcodesnotifications_cancel_local_notification);
 
-void samcodesnotifications_cancel_local_notifications()
+void samcodesnotifications_cancel_local_notifications(int slot)
 {
-	cancelLocalNotifications();
+	cancelLocalNotifications(slot);
 }
-DEFINE_PRIME0v(samcodesnotifications_cancel_local_notifications);
+DEFINE_PRIME1v(samcodesnotifications_cancel_local_notifications);
 
-int samcodesnotifications_get_application_icon_badge_number()
+int samcodesnotifications_get_application_icon_badge_number(int number)
 {
-	return getApplicationIconBadgeNumber();
+	return getApplicationIconBadgeNumber(number);
 }
-DEFINE_PRIME0(samcodesnotifications_get_application_icon_badge_number)
+DEFINE_PRIME1(samcodesnotifications_get_application_icon_badge_number)
 
 bool samcodesnotifications_set_application_icon_badge_number(int number)
 {

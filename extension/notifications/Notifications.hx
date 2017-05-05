@@ -20,7 +20,7 @@ class Notifications {
 		schedule_local_notification.call(slot, triggerAfterSecs, titleText, messageBodyText, actionButtonText, incrementBadgeCount);
 	}
 	#end
-	
+
 	public static function cancelLocalNotification(slot:Int):Void {
 		#if android
 		cancel_local_notification(slot);
@@ -28,23 +28,23 @@ class Notifications {
 		cancel_local_notification.call(slot); // Note use of call() seems required with HXCPP functions
 		#end
 	}
-	
+
 	public static function cancelLocalNotifications():Void {
 		#if android
 		cancel_local_notifications();
 		#elseif ios
-		cancel_local_notifications.call();
+		cancel_local_notifications.call(0);
 		#end
 	}
-	
+
 	public static function getApplicationIconBadgeNumber():Int {
 		#if android
 		return get_application_icon_badge_number();
 		#elseif ios
-		return get_application_icon_badge_number.call();
+		return get_application_icon_badge_number.call(0);
 		#end
 	}
-	
+
 	public static function setApplicationIconBadgeNumber(number:Int):Bool {
 		#if android
 		return set_application_icon_badge_number(number);
@@ -52,7 +52,7 @@ class Notifications {
 		return set_application_icon_badge_number.call(number);
 		#end
 	}
-	
+
 	#if android
 	private static inline var packageName:String = "com/samcodes/notifications/NotificationsExtension";
 	private static inline function bindJNI(jniMethod:String, jniSignature:String) {
@@ -66,8 +66,8 @@ class Notifications {
 	#elseif ios
 	private static var schedule_local_notification = PrimeLoader.load("samcodesnotifications_schedule_local_notification", "ifsssbv");
 	private static var cancel_local_notification = PrimeLoader.load("samcodesnotifications_cancel_local_notification", "iv");
-	private static var cancel_local_notifications = PrimeLoader.load("samcodesnotifications_cancel_local_notifications", "v");
-	private static var get_application_icon_badge_number = PrimeLoader.load("samcodesnotifications_get_application_icon_badge_number", "i");
+	private static var cancel_local_notifications = PrimeLoader.load("samcodesnotifications_cancel_local_notifications", "iv");
+	private static var get_application_icon_badge_number = PrimeLoader.load("samcodesnotifications_get_application_icon_badge_number", "ii");
 	private static var set_application_icon_badge_number = PrimeLoader.load("samcodesnotifications_set_application_icon_badge_number", "ib");
 	#end
 }
