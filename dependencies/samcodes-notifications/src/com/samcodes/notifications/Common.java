@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Window;
 import android.util.Log;
+import android.content.res.Resources;
 import java.lang.Runnable;
 import java.util.concurrent.ConcurrentHashMap;
 import me.leolin.shortcutbadger.ShortcutBadger;
@@ -104,6 +105,18 @@ class Common {
 			alarmManager.set(AlarmManager.RTC_WAKEUP, alertTime, pendingIntent);
 		}
 		return pendingIntent;
+	}
+
+	public static String getAppTitleFromResource(Context ctx) {
+		try {
+			Resources res = ctx.getResources();
+			String pkgName = ctx.getPackageName();
+			int res_id = res.getIdentifier("app_title", "string", pkgName);
+			return res.getString(res_id);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return "failed to retrieve title";
+		}
 	}
 	
 	// Get application icon badge number

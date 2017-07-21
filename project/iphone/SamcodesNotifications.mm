@@ -43,6 +43,11 @@
 		if([title length] != 0)
 		{
 			notification.alertTitle = title;
+		} else {
+			NSBundle *bundle = [NSBundle mainBundle];
+        	NSDictionary *info = [bundle infoDictionary];
+        	NSString *prodName = [info objectForKey:@"CFBundleDisplayName"];
+        	notification.alertTitle = prodName;
 		}
 	}
 	if([action length] != 0)

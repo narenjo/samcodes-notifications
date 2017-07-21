@@ -17,6 +17,11 @@ import org.haxe.extension.Extension;
 public class NotificationsExtension extends Extension {
 	public static void scheduleLocalNotification(int slot, float triggerAfterSecs, String titleText, String subtitleText, String messageBodyText, String tickerText, boolean incrementBadgeCount) {
 		Long alertTime = System.currentTimeMillis() + (long)(triggerAfterSecs * 1000.0f); // UTC time to schedule in milliseconds
+		Log.i(Common.TAG, "scheduleLocalNotification");
+		if (titleText.equals("") || titleText.isEmpty()) {
+			titleText = Common.getAppTitleFromResource(mainContext);
+			Log.i(Common.TAG, titleText);
+		}
 		Common.writePreference(mainContext, slot, alertTime, titleText, subtitleText, messageBodyText, tickerText, incrementBadgeCount);
 		PendingIntent intent = Common.scheduleLocalNotification(mainContext, slot, alertTime, titleText, subtitleText, messageBodyText, tickerText);
 		Common.pendingIntents.put(slot, intent);
