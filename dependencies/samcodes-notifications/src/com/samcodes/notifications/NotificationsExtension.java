@@ -63,6 +63,10 @@ public class NotificationsExtension extends Extension {
 			Integer slot = entry.getKey();
 			Common.erasePreference(mainContext, slot);
 		}
+		for (Integer i=0; i<Common.MAX_NOTIFICATION_SLOTS; i++) {
+			//hack. we just clear prefferencies and old notifications can't be shown.
+			Common.erasePreference(mainContext, i);
+		}
 		Common.pendingIntents.clear();
 	}
 	
