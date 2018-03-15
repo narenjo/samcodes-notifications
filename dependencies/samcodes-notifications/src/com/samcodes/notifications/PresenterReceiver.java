@@ -72,7 +72,7 @@ public class PresenterReceiver extends BroadcastReceiver {
 		}
 		
 		// Get small application icon
-		int smallIconId = android.R.drawable.ic_dialog_info;
+		int smallIconId = R.drawable.ic_action_white;
 		
 		// Get large application icon
 		int largeIconId = 0;
