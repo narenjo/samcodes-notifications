@@ -1,9 +1,6 @@
 package com.samcodes.notifications;
 
-import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.app.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +10,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Build;
 import android.R.dimen;
 import android.support.v4.app.NotificationCompat;
@@ -23,6 +21,11 @@ import com.samcodes.notifications.Common;
 import org.haxe.extension.Extension;
 
 public class PresenterReceiver extends BroadcastReceiver {
+
+    private static NotificationManager notificationManager;
+    private static NotificationCompat.Builder builder;
+    public static final String NOTIFICATION_CHANNEL_ID = "10001";
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		if(context == null || intent == null) {
@@ -35,6 +38,7 @@ public class PresenterReceiver extends BroadcastReceiver {
 			return;
 		}
 		presentNotification(context, action); // Everything should be for presenting local device notifications
+        Log.i(Common.TAG, "presenter onReceive");
 	}
 	
 	private static void presentNotification(Context context, String action) {
@@ -93,7 +97,7 @@ public class PresenterReceiver extends BroadcastReceiver {
 		Bitmap largeIcon = BitmapFactory.decodeResource(applicationContext.getResources(), largeIconId);
 		
 		// Scale it down if it's too big
-		if(android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+		if(largeIcon != null && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			int width = android.R.dimen.notification_large_icon_width > 0 ? android.R.dimen.notification_large_icon_width : 150;
 			int height = android.R.dimen.notification_large_icon_height > 0 ? android.R.dimen.notification_large_icon_height : 150;
 			if(largeIcon.getWidth() > width || largeIcon.getHeight() > height) {
@@ -120,7 +124,7 @@ public class PresenterReceiver extends BroadcastReceiver {
 		}
 		
 		PendingIntent pendingIntent = PendingIntent.getActivity(applicationContext, slot, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-		NotificationCompat.Builder builder = new NotificationCompat.Builder(applicationContext);
+		builder = new NotificationCompat.Builder(applicationContext);
 		builder.setAutoCancel(true);
 		builder.setContentTitle(titleText);
 		builder.setSubText(subtitleText);
@@ -136,9 +140,26 @@ public class PresenterReceiver extends BroadcastReceiver {
 		builder.setDefaults(NotificationCompat.DEFAULT_SOUND | NotificationCompat.DEFAULT_VIBRATE | NotificationCompat.DEFAULT_LIGHTS);
 		builder.build();
 		
-		NotificationManager notificationManager = ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE));
+		notificationManager = ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE));
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+        {
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "NOTIFICATION_CHANNEL_NAME", importance);
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.GREEN);
+            notificationChannel.enableVibration(true);
+            notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+            if(notificationManager != null) {
+                builder.setChannelId(NOTIFICATION_CHANNEL_ID);
+                Log.i(Common.TAG, "\n\nSet channel id to " + NOTIFICATION_CHANNEL_ID + "\n\n");
+            }
+            notificationManager.createNotificationChannel(notificationChannel);
+        }
+
 		if(notificationManager != null) {
-			notificationManager.notify(slot, builder.getNotification());
+			notificationManager.notify(slot, builder.build());
+            Log.i(Common.TAG, "\n\nNotificationManager notify slot " + slot + "\n\n");
 		}
 	}
 }

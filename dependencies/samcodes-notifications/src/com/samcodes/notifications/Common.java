@@ -5,10 +5,7 @@ import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ApplicationInfo;
@@ -99,7 +96,8 @@ class Common {
 	public static PendingIntent scheduleLocalNotification(Context context, int slot, Long alertTime, String titleText, String subtitleText, String messageBodyText, String tickerText) {
 		Log.i(TAG, "Scheduling local notification");
 		Intent alertIntent = new Intent(getNotificationName(slot));
-		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, slot, alertIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        alertIntent.setClass(context, PresenterReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, slot, alertIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
 		if(alarmManager != null) {
 			alarmManager.set(AlarmManager.RTC_WAKEUP, alertTime, pendingIntent);
