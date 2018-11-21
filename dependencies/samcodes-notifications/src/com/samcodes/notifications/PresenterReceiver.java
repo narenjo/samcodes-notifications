@@ -10,9 +10,13 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.R.dimen;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.Builder;
 import android.view.Window;
@@ -75,11 +79,11 @@ public class PresenterReceiver extends BroadcastReceiver {
 			return;
 		}
 		
-		// Get small application icon
+		// Get application icons
+        Bitmap largeIcon = null;
+        int largeIconId = 0;
 		int smallIconId = R.drawable.ic_action_white;
-		
-		// Get large application icon
-		int largeIconId = 0;
+
 		try {
 			PackageManager pm = context.getPackageManager();
 			if(pm != null) {
@@ -90,11 +94,27 @@ public class PresenterReceiver extends BroadcastReceiver {
 			}
 		} catch (NameNotFoundException e) {
 			Log.i(Common.TAG, "Failed to get application icon, falling back to default");
-			largeIconId = android.R.drawable.ic_dialog_alert;
+			largeIconId = android.R.drawable.ic_dialog_info;
 		}
-		
-		// Get large application icon
-		Bitmap largeIcon = BitmapFactory.decodeResource(applicationContext.getResources(), largeIconId);
+        // Get large application icon
+        largeIcon = BitmapFactory.decodeResource(applicationContext.getResources(), largeIconId);
+
+		// Android 26+?
+        if (largeIcon == null)
+        {
+            Drawable iconDr = null;
+            try {
+                iconDr = context.getPackageManager().getApplicationIcon(Common.getPackageName());
+            } catch (PackageManager.NameNotFoundException e)
+            {
+                Log.i(Common.TAG, "Failed to get application icon, falling back to default");
+            }
+            if (iconDr != null)
+            {
+                largeIcon = getBitmapFromDrawable(iconDr);
+            }
+        }
+        //
 		
 		// Scale it down if it's too big
 		if(largeIcon != null && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -149,17 +169,27 @@ public class PresenterReceiver extends BroadcastReceiver {
             notificationChannel.enableLights(true);
             notificationChannel.setLightColor(Color.GREEN);
             notificationChannel.enableVibration(true);
-            notificationChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+            notificationChannel.setVibrationPattern(new long[]{500, 200});
             if(notificationManager != null) {
                 builder.setChannelId(NOTIFICATION_CHANNEL_ID);
-                Log.i(Common.TAG, "\n\nSet channel id to " + NOTIFICATION_CHANNEL_ID + "\n\n");
+                Log.i(Common.TAG, "Set channel id to " + NOTIFICATION_CHANNEL_ID);
             }
             notificationManager.createNotificationChannel(notificationChannel);
         }
 
 		if(notificationManager != null) {
 			notificationManager.notify(slot, builder.build());
-            Log.i(Common.TAG, "\n\nNotificationManager notify slot " + slot + "\n\n");
+            Log.i(Common.TAG, "NotificationManager notify slot " + slot);
 		}
 	}
+
+    @NonNull
+    private static Bitmap getBitmapFromDrawable(@NonNull Drawable drawable) {
+        final Bitmap bmp = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        final Canvas canvas = new Canvas(bmp);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bmp;
+    }
 }
