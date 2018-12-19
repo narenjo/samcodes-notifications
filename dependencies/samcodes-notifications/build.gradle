@@ -24,6 +24,6 @@ android {
 
 dependencies {	
     compile project(':deps:extension-api')
-    compile "com.android.support:appcompat-v7:26.1.+"
-    compile 'com.android.support:support-v4:[23,24)'
+    implementation "com.android.support:appcompat-v7:26.1.+"
+    implementation 'com.android.support:support-v4:[23,24)'
 }
