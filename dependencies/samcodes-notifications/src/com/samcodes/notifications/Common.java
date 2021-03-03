@@ -5,10 +5,7 @@ import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ApplicationInfo;
@@ -18,6 +15,7 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.view.Window;
 import android.util.Log;
+import android.content.res.Resources;
 import java.lang.Runnable;
 import java.util.concurrent.ConcurrentHashMap;
 import me.leolin.shortcutbadger.ShortcutBadger;
@@ -114,9 +112,8 @@ class Common {
 	public static PendingIntent scheduleLocalNotification(Context context, int slot, Long alertTime) {
 		Log.i(TAG, "Scheduling local notification");
 		Intent alertIntent = new Intent(getNotificationName(slot));
-		alertIntent.setClass(context, PresenterReceiver.class);
-		
-		PendingIntent pendingIntent = PendingIntent.getBroadcast(context, slot, alertIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        alertIntent.setClass(context, PresenterReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, slot, alertIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 		AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
 		if(alarmManager != null) {
 			//if(Common.isDozeSupported() && Common.isDozeWhitelisted(context)) {
@@ -128,6 +125,18 @@ class Common {
 			alarmManager.set(AlarmManager.RTC_WAKEUP, alertTime, pendingIntent);
 		}
 		return pendingIntent;
+	}
+
+	public static String getAppTitleFromResource(Context ctx) {
+		try {
+			Resources res = ctx.getResources();
+			String pkgName = ctx.getPackageName();
+			int res_id = res.getIdentifier("app_title", "string", pkgName);
+			return res.getString(res_id);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return "failed to retrieve title";
+		}
 	}
 	
 	// Perform alarm re-registration. This is required after alarms are cleared because the device is turned off or rebooted, or the application was forced-stopped
@@ -215,17 +224,5 @@ class Common {
 		}
 		
 		return true;
-	}
-	
-	private static boolean isDozeSupported() {
-		return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
-	}
-
-	private static boolean isDozeWhitelisted(Context context) {
-		PowerManager powerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
-		if(powerManager == null) {
-			return false;
-		}
-		return powerManager.isIgnoringBatteryOptimizations(getPackageName());
 	}
 }

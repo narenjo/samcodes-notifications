@@ -3,6 +3,7 @@
 	<uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
 	<!-- To receive the boot event, to reschedule alarms which would otherwise be lost after reboot -->
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+	<uses-sdk android:minSdkVersion="::ANDROID_MINIMUM_SDK_VERSION::" android:targetSdkVersion="::ANDROID_TARGET_SDK_VERSION::"/>
 	
 	<!-- Badge permission for Samsung -->
 	<uses-permission android:name="com.sec.android.provider.badge.permission.READ"/>

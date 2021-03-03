@@ -1,10 +1,6 @@
 package com.samcodes.notifications;
 
-import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.app.*;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,16 +10,26 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.R.dimen;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationCompat.Builder;
+import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationCompat.Builder;
 import android.view.Window;
 import android.util.Log;
 import com.samcodes.notifications.Common;
 import org.haxe.extension.Extension;
 
 public class PresenterReceiver extends BroadcastReceiver {
+
+    private static NotificationManager notificationManager;
+    private static NotificationCompat.Builder builder;
+    public static final String NOTIFICATION_CHANNEL_ID = "10001";
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		if(context == null || intent == null) {
@@ -36,6 +42,7 @@ public class PresenterReceiver extends BroadcastReceiver {
 			return;
 		}
 		presentNotification(context, action); // Everything should be for presenting local device notifications
+        Log.i(Common.TAG, "presenter onReceive");
 	}
 	
 	private static void presentNotification(Context context, String action) {
@@ -79,14 +86,42 @@ public class PresenterReceiver extends BroadcastReceiver {
 			return;
 		}
 		
-		// Get small notification icon id
-		int smallIconId = getSmallIconId(smallIconName, applicationContext);
-		
-		// Get large application icon id
-		int largeIconId = getLargeIconId(largeIconName, applicationContext);
-		
-		// Get large application icon bitmap
-		Bitmap largeIcon = BitmapFactory.decodeResource(applicationContext.getResources(), largeIconId);
+		// Get application icons
+        Bitmap largeIcon = null;
+        int largeIconId = 0;
+		int smallIconId = R.drawable.ic_action_white;
+
+		try {
+			PackageManager pm = context.getPackageManager();
+			if(pm != null) {
+				ApplicationInfo ai = pm.getApplicationInfo(Common.getPackageName(), 0);
+				if(ai != null) {
+					largeIconId = ai.icon;
+				}
+			}
+		} catch (NameNotFoundException e) {
+			Log.i(Common.TAG, "Failed to get application icon, falling back to default");
+			largeIconId = android.R.drawable.ic_dialog_info;
+		}
+        // Get large application icon
+        largeIcon = BitmapFactory.decodeResource(applicationContext.getResources(), largeIconId);
+
+		// Android 26+?
+        if (largeIcon == null)
+        {
+            Drawable iconDr = null;
+            try {
+                iconDr = context.getPackageManager().getApplicationIcon(Common.getPackageName());
+            } catch (PackageManager.NameNotFoundException e)
+            {
+                Log.i(Common.TAG, "Failed to get application icon, falling back to default");
+            }
+            if (iconDr != null)
+            {
+                largeIcon = getBitmapFromDrawable(iconDr);
+            }
+        }
+        //
 		
 		// Scale it down if it's too big
 		if(largeIcon != null && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
@@ -116,7 +151,7 @@ public class PresenterReceiver extends BroadcastReceiver {
 		}
 		
 		PendingIntent pendingIntent = PendingIntent.getActivity(applicationContext, slot, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-		NotificationCompat.Builder builder = new NotificationCompat.Builder(applicationContext);
+		builder = new NotificationCompat.Builder(applicationContext);
 		builder.setAutoCancel(true);
 		builder.setContentTitle(titleText);
 		builder.setSubText(subtitleText);
@@ -138,77 +173,36 @@ public class PresenterReceiver extends BroadcastReceiver {
 		
 		builder.build();
 		
-		NotificationManager notificationManager = ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE));
+		notificationManager = ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE));
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+        {
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "NOTIFICATION_CHANNEL_NAME", importance);
+            notificationChannel.enableLights(true);
+            notificationChannel.setLightColor(Color.GREEN);
+            notificationChannel.enableVibration(true);
+            notificationChannel.setVibrationPattern(new long[]{500, 200});
+            if(notificationManager != null) {
+                builder.setChannelId(NOTIFICATION_CHANNEL_ID);
+                Log.i(Common.TAG, "Set channel id to " + NOTIFICATION_CHANNEL_ID);
+            }
+            notificationManager.createNotificationChannel(notificationChannel);
+        }
+
 		if(notificationManager != null) {
-			
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-				NotificationChannel notificationChannel = new NotificationChannel(channelId, channelName, channelImportance);
-				notificationChannel.setDescription(channelDescription);
-				
-				// Register the channel with the system. Note that the importance or other notification behaviors can't be changed
-				// after it has been created (the user will have control via their app settings instead)
-				notificationManager.createNotificationChannel(notificationChannel);
-			}
-			
-			notificationManager.notify(slot, builder.getNotification());
+			notificationManager.notify(slot, builder.build());
+            Log.i(Common.TAG, "NotificationManager notify slot " + slot);
 		}
 	}
-	
-	// Get Android resource id for an image given the name of the drawable
-	// Note that drawable name should not include an extension like ".png"
-	// Returns 0 on failure (Android Resources.getIdentifier also returns 0 if no such resource is found)
-	private static int getDrawableResourceId(String name, Context applicationContext)
-	{
-		if(name == null) {
-			return 0;
-		}
-		return applicationContext.getResources().getIdentifier(name, "drawable", Common.getPackageName());
-	}
-	
-	// Get the small icon id to show with the notification. Falls back to a generic info icon
-	// if we cannot find the named icon in Android resources
-	private static int getSmallIconId(String smallIconName, Context applicationContext)
-	{
-		// Try to get the named icon, if one is given
-		if(smallIconName != null && !smallIconName.isEmpty()) {
-			int iconId = getDrawableResourceId(smallIconName, applicationContext);
-			if(iconId != 0) {
-				return iconId;
-			}
-		}
-		
-		Log.i(Common.TAG, "Failed to get custom small icon for notification, will fall back to generic alert icon");
-		return android.R.drawable.ic_dialog_info;
-	}
-	
-	// Get the large icon id to show with the notification. Falls back to the app icon if
-	// we cannot find the named icon in Android resources, and then the generic alert icon if that fails
-	private static int getLargeIconId(String largeIconName, Context applicationContext)
-	{
-		// Try to get the named icon, if one is given
-		if(largeIconName != null && !largeIconName.isEmpty()) {
-			int iconId = getDrawableResourceId(largeIconName, applicationContext);
-			if(iconId != 0) {
-				return iconId;
-			}
-		}
-		
-		Log.i(Common.TAG, "Failed to get custom large icon for notification, will fall back to generic icon");
-		
-		// Fall back to application icon
-		try {
-			PackageManager pm = applicationContext.getPackageManager();
-			if(pm != null) {
-				ApplicationInfo ai = pm.getApplicationInfo(Common.getPackageName(), 0);
-				if(ai != null) {
-					return ai.icon;
-				}
-			}
-		} catch (NameNotFoundException e) {
-			Log.i(Common.TAG, "Failed to get application icon, will fall back to default");
-		}
-		
-		// Fall back to generic alert icon
-		return android.R.drawable.ic_dialog_alert;
-	}
+
+    @NonNull
+    private static Bitmap getBitmapFromDrawable(@NonNull Drawable drawable) {
+        final Bitmap bmp = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        final Canvas canvas = new Canvas(bmp);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bmp;
+    }
 }

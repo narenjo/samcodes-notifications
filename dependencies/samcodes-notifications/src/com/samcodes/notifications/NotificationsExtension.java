@@ -27,8 +27,13 @@ public class NotificationsExtension extends Extension {
 	
 	public static void scheduleLocalNotification(int slot, float triggerAfterSecs, String titleText, String subtitleText, String messageBodyText, String tickerText, boolean incrementBadgeCount, boolean ongoing, String smallIconName, String largeIconName, String channelId, String channelName, String channelDescription, int channelImportance) {
 		Long alertTime = System.currentTimeMillis() + (long)(triggerAfterSecs * 1000.0f); // UTC time to schedule in milliseconds
-		Common.writePreference(mainContext, slot, alertTime, titleText, subtitleText, messageBodyText, tickerText, incrementBadgeCount, ongoing, smallIconName, largeIconName, channelId, channelName, channelDescription, channelImportance);
-		PendingIntent intent = Common.scheduleLocalNotification(mainContext, slot, alertTime);
+		Log.i(Common.TAG, "scheduleLocalNotification");
+		if (titleText.equals("") || titleText.isEmpty()) {
+			titleText = Common.getAppTitleFromResource(mainContext);
+			Log.i(Common.TAG, titleText);
+		}
+		Common.writePreference(mainContext, slot, alertTime, titleText, subtitleText, messageBodyText, tickerText, incrementBadgeCount);
+		PendingIntent intent = Common.scheduleLocalNotification(mainContext, slot, alertTime, titleText, subtitleText, messageBodyText, tickerText);
 		Common.pendingIntents.put(slot, intent);
 	}
 	
@@ -67,6 +72,10 @@ public class NotificationsExtension extends Extension {
 			}
 			Integer slot = entry.getKey();
 			Common.erasePreference(mainContext, slot);
+		}
+		for (Integer i=0; i<Common.MAX_NOTIFICATION_SLOTS; i++) {
+			//hack. we just clear prefferencies and old notifications can't be shown.
+			Common.erasePreference(mainContext, i);
 		}
 		Common.pendingIntents.clear();
 	}

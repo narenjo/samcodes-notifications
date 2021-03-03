@@ -35,7 +35,7 @@
 	UILocalNotification* notification = [[UILocalNotification alloc] init];
 	notification.fireDate = [NSDate dateWithTimeIntervalSinceNow:timeInterval];
 	notification.timeZone = [NSTimeZone defaultTimeZone];
-	notification.repeatInterval = nil;
+	notification.repeatInterval = 0; //nil;
 	notification.alertBody = messageBody;
 	
 	if ([notification respondsToSelector:@selector(alertTitle)]) // iOS 8.2 and above
@@ -43,6 +43,11 @@
 		if([title length] != 0)
 		{
 			notification.alertTitle = title;
+		} else {
+			NSBundle *bundle = [NSBundle mainBundle];
+        	NSDictionary *info = [bundle infoDictionary];
+        	NSString *prodName = [info objectForKey:@"CFBundleDisplayName"];
+        	notification.alertTitle = prodName;
 		}
 	}
 	if([action length] != 0)
@@ -196,13 +201,13 @@ namespace samcodesnotifications
 		[controller cancelLocalNotification:slot];
 	}
 	
-	void cancelLocalNotifications()
+	void cancelLocalNotifications(int number)
 	{
 		NotificationsController* controller = getNotificationsController();
 		[controller cancelLocalNotifications];
 	}
-	
-	int getApplicationIconBadgeNumber()
+
+	int getApplicationIconBadgeNumber(int number)
 	{
 		NotificationsController* controller = getNotificationsController();
 		return [controller getApplicationIconBadgeNumber];
