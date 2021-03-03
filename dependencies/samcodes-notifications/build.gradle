@@ -12,8 +12,9 @@ android {
 	buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
 }
 
-dependencies {	
+dependencies {
+	def appcompat_version = "1.2.0"
 	api project(':deps:extension-api')
-	implementation "androidx.appcompat:appcompat:${rootProject.ext.appCompatVersion}"
-	implementation "androidx.appcompat:appcompat-resources:${rootProject.ext.appCompatVersion}"
+	implementation "androidx.appcompat:appcompat:$appcompat_version"
+	implementation "androidx.appcompat:appcompat-resources:$appcompat_version"
 }
