@@ -25,11 +25,6 @@ import com.samcodes.notifications.Common;
 import org.haxe.extension.Extension;
 
 public class PresenterReceiver extends BroadcastReceiver {
-
-    private static NotificationManager notificationManager;
-    private static NotificationCompat.Builder builder;
-    public static final String NOTIFICATION_CHANNEL_ID = "10001";
-
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		if(context == null || intent == null) {
@@ -42,16 +37,15 @@ public class PresenterReceiver extends BroadcastReceiver {
 			return;
 		}
 		presentNotification(context, action); // Everything should be for presenting local device notifications
-        Log.i(Common.TAG, "presenter onReceive");
 	}
-	
+
 	private static void presentNotification(Context context, String action) {
 		SharedPreferences prefs = context.getSharedPreferences(action, Context.MODE_PRIVATE);
 		if(prefs == null) {
 			Log.i(Common.TAG, "Failed to read notification preference data");
 			return;
 		}
-		
+
 		int slot = prefs.getInt(Common.SLOT_TAG, -1);
 		if(slot == -1) {
 			Log.i(Common.TAG, "Failed to read notification slot id");
@@ -69,15 +63,15 @@ public class PresenterReceiver extends BroadcastReceiver {
 		String channelName = prefs.getString(Common.CHANNEL_NAME_TAG, "Pre-Android Oreo Notifications");
 		String channelDescription = prefs.getString(Common.CHANNEL_DESCRIPTION_TAG, "Notifications");
 		int channelImportance = prefs.getInt(Common.CHANNEL_IMPORTANCE_TAG, NotificationManager.IMPORTANCE_DEFAULT);
-		
+
 		Common.erasePreference(context, slot);
-		
+
 		if(incrementBadgeCount) {
 			Common.setApplicationIconBadgeNumber(context, Common.getApplicationIconBadgeNumber(context) + 1);
 		}
 		sendNotification(context, slot, titleText, subtitleText, messageBodyText, tickerText, ongoing, smallIconName, largeIconName, channelId, channelName, channelDescription, channelImportance);
 	}
-	
+
 	// Actually send the local notification to the device
 	private static void sendNotification(Context context, int slot, String titleText, String subtitleText, String messageBodyText, String tickerText, Boolean ongoing, String smallIconName, String largeIconName, String channelId, String channelName, String channelDescription, int channelImportance) {
 		Context applicationContext = context.getApplicationContext();
@@ -85,44 +79,16 @@ public class PresenterReceiver extends BroadcastReceiver {
 			Log.i(Common.TAG, "Failed to get application context");
 			return;
 		}
-		
-		// Get application icons
-        Bitmap largeIcon = null;
-        int largeIconId = 0;
-		int smallIconId = R.drawable.ic_action_white;
 
-		try {
-			PackageManager pm = context.getPackageManager();
-			if(pm != null) {
-				ApplicationInfo ai = pm.getApplicationInfo(Common.getPackageName(), 0);
-				if(ai != null) {
-					largeIconId = ai.icon;
-				}
-			}
-		} catch (NameNotFoundException e) {
-			Log.i(Common.TAG, "Failed to get application icon, falling back to default");
-			largeIconId = android.R.drawable.ic_dialog_info;
-		}
-        // Get large application icon
-        largeIcon = BitmapFactory.decodeResource(applicationContext.getResources(), largeIconId);
+		// Get small notification icon id
+		int smallIconId = getSmallIconId(smallIconName, applicationContext);
 
-		// Android 26+?
-        if (largeIcon == null)
-        {
-            Drawable iconDr = null;
-            try {
-                iconDr = context.getPackageManager().getApplicationIcon(Common.getPackageName());
-            } catch (PackageManager.NameNotFoundException e)
-            {
-                Log.i(Common.TAG, "Failed to get application icon, falling back to default");
-            }
-            if (iconDr != null)
-            {
-                largeIcon = getBitmapFromDrawable(iconDr);
-            }
-        }
-        //
-		
+		// Get large application icon id
+		int largeIconId = getLargeIconId(largeIconName, applicationContext);
+
+		// Get large application icon bitmap
+		Bitmap largeIcon = BitmapFactory.decodeResource(applicationContext.getResources(), largeIconId);
+
 		// Scale it down if it's too big
 		if(largeIcon != null && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
 			int width = android.R.dimen.notification_large_icon_width > 0 ? android.R.dimen.notification_large_icon_width : 150;
@@ -131,7 +97,7 @@ public class PresenterReceiver extends BroadcastReceiver {
 				largeIcon = Bitmap.createScaledBitmap(largeIcon, width, height, false);
 			}
 		}
-		
+
 		// Launch or open application on notification tap
 		Intent intent = null;
 		try {
@@ -144,14 +110,14 @@ public class PresenterReceiver extends BroadcastReceiver {
 		} catch (Exception e) {
 			Log.i(Common.TAG, "Failed to get application launch intent");
 		}
-		
+
 		if(intent == null) {
 			Log.i(Common.TAG, "Falling back to empty intent");
 			intent = new Intent();
 		}
-		
+
 		PendingIntent pendingIntent = PendingIntent.getActivity(applicationContext, slot, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-		builder = new NotificationCompat.Builder(applicationContext);
+		NotificationCompat.Builder builder = new NotificationCompat.Builder(applicationContext);
 		builder.setAutoCancel(true);
 		builder.setContentTitle(titleText);
 		builder.setSubText(subtitleText);
@@ -166,43 +132,84 @@ public class PresenterReceiver extends BroadcastReceiver {
 		builder.setOngoing(ongoing);
 		builder.setWhen(System.currentTimeMillis());
 		builder.setDefaults(NotificationCompat.DEFAULT_SOUND | NotificationCompat.DEFAULT_VIBRATE | NotificationCompat.DEFAULT_LIGHTS);
-		
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			builder.setChannelId(channelId);
 		}
-		
+
 		builder.build();
-		
-		notificationManager = ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE));
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
-        {
-            int importance = NotificationManager.IMPORTANCE_HIGH;
-            NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "NOTIFICATION_CHANNEL_NAME", importance);
-            notificationChannel.enableLights(true);
-            notificationChannel.setLightColor(Color.GREEN);
-            notificationChannel.enableVibration(true);
-            notificationChannel.setVibrationPattern(new long[]{500, 200});
-            if(notificationManager != null) {
-                builder.setChannelId(NOTIFICATION_CHANNEL_ID);
-                Log.i(Common.TAG, "Set channel id to " + NOTIFICATION_CHANNEL_ID);
-            }
-            notificationManager.createNotificationChannel(notificationChannel);
-        }
-
+		NotificationManager notificationManager = ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE));
 		if(notificationManager != null) {
-			notificationManager.notify(slot, builder.build());
-            Log.i(Common.TAG, "NotificationManager notify slot " + slot);
+
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+				NotificationChannel notificationChannel = new NotificationChannel(channelId, channelName, channelImportance);
+				notificationChannel.setDescription(channelDescription);
+
+				// Register the channel with the system. Note that the importance or other notification behaviors can't be changed
+				// after it has been created (the user will have control via their app settings instead)
+				notificationManager.createNotificationChannel(notificationChannel);
+			}
+
+			notificationManager.notify(slot, builder.getNotification());
 		}
 	}
 
-    @NonNull
-    private static Bitmap getBitmapFromDrawable(@NonNull Drawable drawable) {
-        final Bitmap bmp = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        final Canvas canvas = new Canvas(bmp);
-        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        drawable.draw(canvas);
+	// Get Android resource id for an image given the name of the drawable
+	// Note that drawable name should not include an extension like ".png"
+	// Returns 0 on failure (Android Resources.getIdentifier also returns 0 if no such resource is found)
+	private static int getDrawableResourceId(String name, Context applicationContext)
+	{
+		if(name == null) {
+			return 0;
+		}
+		return applicationContext.getResources().getIdentifier(name, "drawable", Common.getPackageName());
+	}
 
-        return bmp;
-    }
+	// Get the small icon id to show with the notification. Falls back to a generic info icon
+	// if we cannot find the named icon in Android resources
+	private static int getSmallIconId(String smallIconName, Context applicationContext)
+	{
+		// Try to get the named icon, if one is given
+		if(smallIconName != null && !smallIconName.isEmpty()) {
+			int iconId = getDrawableResourceId(smallIconName, applicationContext);
+			if(iconId != 0) {
+				return iconId;
+			}
+		}
+
+		Log.i(Common.TAG, "Failed to get custom small icon for notification, will fall back to generic alert icon");
+		return android.R.drawable.ic_dialog_info;
+	}
+
+	// Get the large icon id to show with the notification. Falls back to the app icon if
+	// we cannot find the named icon in Android resources, and then the generic alert icon if that fails
+	private static int getLargeIconId(String largeIconName, Context applicationContext)
+	{
+		// Try to get the named icon, if one is given
+		if(largeIconName != null && !largeIconName.isEmpty()) {
+			int iconId = getDrawableResourceId(largeIconName, applicationContext);
+			if(iconId != 0) {
+				return iconId;
+			}
+		}
+
+		Log.i(Common.TAG, "Failed to get custom large icon for notification, will fall back to generic icon");
+
+		// Fall back to application icon
+		try {
+			PackageManager pm = applicationContext.getPackageManager();
+			if(pm != null) {
+				ApplicationInfo ai = pm.getApplicationInfo(Common.getPackageName(), 0);
+				if(ai != null) {
+					return ai.icon;
+				}
+			}
+		} catch (NameNotFoundException e) {
+			Log.i(Common.TAG, "Failed to get application icon, will fall back to default");
+		}
+
+		// Fall back to generic alert icon
+		return android.R.drawable.ic_dialog_alert;
+	}
 }
