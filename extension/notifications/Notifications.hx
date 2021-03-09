@@ -46,9 +46,9 @@ class Notifications {
 	**/
 	public static function scheduleLocalNotification(slot:Int, triggerAfterSecs:Float, titleText:String, subtitleText:String, messageBodyText:String,
 			tickerText:String, incrementBadgeCount:Bool, isOngoing:Bool, smallIconName:String, largeIconName:String, channelId:String, channelName:String,
-			channelDescription:String, channelImportance:NotificationImportance):Void {
+			channelDescription:String, channelImportance:NotificationImportance, ?colorString:String):Void {
 		schedule_local_notification(slot, triggerAfterSecs, titleText, subtitleText, messageBodyText, tickerText, incrementBadgeCount, isOngoing,
-			smallIconName, largeIconName, channelId, channelName, channelDescription, channelImportance);
+			smallIconName, largeIconName, channelId, channelName, channelDescription, channelImportance, colorString);
 	}
 
 	#elseif ios
@@ -107,7 +107,7 @@ class Notifications {
 	}
 
 	private static var schedule_local_notification = bindJNI("scheduleLocalNotification",
-		"(IFLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V");
+		"(IFLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V");
 	private static var cancel_local_notification = bindJNI("cancelLocalNotification", "(I)V");
 	private static var cancel_local_notifications = bindJNI("cancelLocalNotifications", "()V");
 	private static var get_application_icon_badge_number = bindJNI("getApplicationIconBadgeNumber", "()I");

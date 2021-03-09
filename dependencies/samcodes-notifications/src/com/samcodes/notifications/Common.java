@@ -50,9 +50,10 @@ class Common {
 	public static final String CHANNEL_NAME_TAG = "channelname";
 	public static final String CHANNEL_DESCRIPTION_TAG = "channeldescription";
 	public static final String CHANNEL_IMPORTANCE_TAG = "importance";
+	public static final String COLOR_STRING = "color";
 
 	public static String getPackageName() {
-		return "::APP_PACKAGE::";
+		return Extension.packageName;
 	}
 
 	public static String getNotificationName(int slot) {
@@ -68,7 +69,7 @@ class Common {
 	}
 
 	// Write notification data to preferences
-	public static void writePreference(Context context, int slot, Long alertTime, String titleText, String subtitleText, String messageBodyText, String tickerText, boolean incrementBadgeCount, boolean ongoing, String smallIconName, String largeIconName, String channelId, String channelName, String channelDescription, int importance) {
+	public static void writePreference(Context context, int slot, Long alertTime, String titleText, String subtitleText, String messageBodyText, String tickerText, boolean incrementBadgeCount, boolean ongoing, String smallIconName, String largeIconName, String channelId, String channelName, String channelDescription, int importance, String colorString) {
 		SharedPreferences.Editor editor = getNotificationSettings(context, slot).edit();
 		if(editor == null) {
 			Log.i(TAG, "Failed to write notification to preferences");
@@ -77,7 +78,9 @@ class Common {
 		editor.putInt(SLOT_TAG, slot);
 		editor.putLong(UTC_SCHEDULED_TIME, alertTime);
 		editor.putString(TITLE_TEXT_TAG, titleText);
-		editor.putString(SUBTITLE_TEXT_TAG, subtitleText);
+		if(subtitleText != null && !subtitleText.trim().isEmpty()){
+			editor.putString(SUBTITLE_TEXT_TAG, subtitleText);
+		}
 		editor.putString(MESSAGE_BODY_TEXT_TAG, messageBodyText);
 		editor.putString(TICKER_TEXT_TAG, tickerText);
 		editor.putBoolean(INCREMENT_BADGE_COUNT_TAG, incrementBadgeCount);
@@ -88,6 +91,9 @@ class Common {
 		editor.putString(CHANNEL_NAME_TAG, channelName);
 		editor.putString(CHANNEL_DESCRIPTION_TAG, channelDescription);
 		editor.putInt(CHANNEL_IMPORTANCE_TAG, importance);
+		if(colorString != null && !colorString.trim().isEmpty()){
+			editor.putString(COLOR_STRING, colorString);
+		}
 		boolean committed = editor.commit();
 
 		if(!committed) {

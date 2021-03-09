@@ -52,7 +52,7 @@ public class PresenterReceiver extends BroadcastReceiver {
 			return;
 		}
 		String titleText = prefs.getString(Common.TITLE_TEXT_TAG, "");
-		String subtitleText = prefs.getString(Common.SUBTITLE_TEXT_TAG, "");
+		String subtitleText = prefs.getString(Common.SUBTITLE_TEXT_TAG, null);
 		String messageBodyText = prefs.getString(Common.MESSAGE_BODY_TEXT_TAG, "");
 		String tickerText = prefs.getString(Common.TICKER_TEXT_TAG, "");
 		Boolean ongoing = prefs.getBoolean(Common.ONGOING_TAG, false);
@@ -63,17 +63,18 @@ public class PresenterReceiver extends BroadcastReceiver {
 		String channelName = prefs.getString(Common.CHANNEL_NAME_TAG, "Pre-Android Oreo Notifications");
 		String channelDescription = prefs.getString(Common.CHANNEL_DESCRIPTION_TAG, "Notifications");
 		int channelImportance = prefs.getInt(Common.CHANNEL_IMPORTANCE_TAG, NotificationManager.IMPORTANCE_DEFAULT);
+		String colorString = prefs.getString(Common.COLOR_STRING, null);
 
 		Common.erasePreference(context, slot);
 
 		if(incrementBadgeCount) {
 			Common.setApplicationIconBadgeNumber(context, Common.getApplicationIconBadgeNumber(context) + 1);
 		}
-		sendNotification(context, slot, titleText, subtitleText, messageBodyText, tickerText, ongoing, smallIconName, largeIconName, channelId, channelName, channelDescription, channelImportance);
+		sendNotification(context, slot, titleText, subtitleText, messageBodyText, tickerText, ongoing, smallIconName, largeIconName, channelId, channelName, channelDescription, channelImportance, colorString);
 	}
 
 	// Actually send the local notification to the device
-	private static void sendNotification(Context context, int slot, String titleText, String subtitleText, String messageBodyText, String tickerText, Boolean ongoing, String smallIconName, String largeIconName, String channelId, String channelName, String channelDescription, int channelImportance) {
+	private static void sendNotification(Context context, int slot, String titleText, String subtitleText, String messageBodyText, String tickerText, Boolean ongoing, String smallIconName, String largeIconName, String channelId, String channelName, String channelDescription, int channelImportance, String colorString) {
 		Context applicationContext = context.getApplicationContext();
 		if(applicationContext == null) {
 			Log.i(Common.TAG, "Failed to get application context");
@@ -120,7 +121,9 @@ public class PresenterReceiver extends BroadcastReceiver {
 		NotificationCompat.Builder builder = new NotificationCompat.Builder(applicationContext);
 		builder.setAutoCancel(true);
 		builder.setContentTitle(titleText);
-		builder.setSubText(subtitleText);
+		if(subtitleText != null){
+			builder.setSubText(subtitleText);
+		}
 		builder.setContentText(messageBodyText);
 		builder.setTicker(tickerText);
 
@@ -128,6 +131,9 @@ public class PresenterReceiver extends BroadcastReceiver {
 			builder.setLargeIcon(largeIcon);
 		}
 		builder.setSmallIcon(smallIconId);
+		if(colorString != null){
+			builder.setColor(Color.parseColor(colorString));
+		}
 		builder.setContentIntent(pendingIntent);
 		builder.setOngoing(ongoing);
 		builder.setWhen(System.currentTimeMillis());
