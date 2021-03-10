@@ -53,7 +53,7 @@ class Common {
 	public static final String COLOR_STRING = "color";
 
 	public static String getPackageName() {
-		return Extension.packageName;
+		return "::APP_PACKAGE::";
 	}
 
 	public static String getNotificationName(int slot) {
